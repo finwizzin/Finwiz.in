@@ -1940,15 +1940,25 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Required Loan Amount *</label>
-            <select id="loanAmountInput" required
+            <select id="loanAmountInput" required onchange="toggleCustomLoanAmount(this)"
               class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brandOrange focus:border-brandOrange outline-none">
               <option value="">Select Loan Amount</option>
-              <option value="₹1 Lakh - ₹5 Lakhs">₹1 Lakh - ₹5 Lakhs</option>
-              <option value="₹5 Lakhs - ₹15 Lakhs">₹5 Lakhs - ₹15 Lakhs</option>
-              <option value="₹15 Lakhs - ₹30 Lakhs">₹15 Lakhs - ₹30 Lakhs</option>
-              <option value="₹30 Lakhs - ₹50 Lakhs">₹30 Lakhs - ₹50 Lakhs</option>
-              <option value="₹50 Lakhs - ₹1 Crore">₹50 Lakhs - ₹1 Crore</option>
+              <option value="₹1 Lakh">₹1 Lakh</option>
+              <option value="₹5 Lakh">₹5 Lakh</option>
+              <option value="₹10 Lakh">₹10 Lakh</option>
+              <option value="₹15 Lakh">₹15 Lakh</option>
+              <option value="₹20 Lakh">₹20 Lakh</option>
+              <option value="₹30 Lakh">₹30 Lakh</option>
+              <option value="₹50 Lakh">₹50 Lakh</option>
+              <option value="₹1 Crore">₹1 Crore</option>
+              <option value="Other">Other</option>
             </select>
+            <!-- Dynamic custom loan amount input — shown only when "Other" is selected -->
+            <div id="customLoanAmountWrapper" class="hidden mt-2 relative">
+              <input type="number" id="customLoanAmountInput" min="1"
+                placeholder="Enter required loan amount in ₹"
+                class="w-full border border-brandOrange/60 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brandOrange focus:border-brandOrange outline-none bg-orange-50/40 placeholder-gray-400 transition-all">
+            </div>
           </div>
 
           <div>
@@ -1979,15 +1989,23 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Net Monthly Salary *</label>
-            <select id="monthlySalaryInput" required
+            <select id="monthlySalaryInput" required onchange="toggleCustomSalary(this)"
               class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brandOrange focus:border-brandOrange outline-none">
               <option value="">Select Salary Range</option>
-              <option value="₹20,000 – ₹35,000">₹20,000 – ₹35,000</option>
-              <option value="₹35,001 – ₹50,000">₹35,001 – ₹50,000</option>
-              <option value="₹50,001 – ₹1,00,000">₹50,001 – ₹1,00,000</option>
-              <option value="₹1,00,000+">₹1,00,000+</option>
-              <option value="Below ₹20,000">Below ₹20,000</option>
+              <option value="₹20,000">₹20,000</option>
+              <option value="₹25,000">₹25,000</option>
+              <option value="₹30,000">₹30,000</option>
+              <option value="₹35,000">₹35,000</option>
+              <option value="₹40,000">₹40,000</option>
+              <option value="₹50,000+">₹50,000+</option>
+              <option value="Other">Other</option>
             </select>
+            <!-- Dynamic custom salary input — shown only when "Other" is selected -->
+            <div id="customSalaryWrapper" class="hidden mt-2 relative">
+              <input type="number" id="customSalaryInput" min="1"
+                placeholder="Enter your exact net monthly salary in ₹"
+                class="w-full border border-brandOrange/60 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brandOrange focus:border-brandOrange outline-none bg-orange-50/40 placeholder-gray-400 transition-all">
+            </div>
           </div>
 
           <div>
@@ -2084,6 +2102,11 @@
               class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-brandOrange focus:border-brandOrange outline-none transition-colors">
             <p id="mobileErrorMsg" class="text-[11px] text-red-500 font-semibold mt-1 hidden"></p>
           </div>
+        </div>
+
+        <!-- Eligibility Rejection Alert — shown only on failed eligibility check -->
+        <div id="eligibilityRejectionAlert" class="hidden bg-red-50 border border-red-400 rounded-xl px-4 py-3 text-xs text-red-700 font-semibold leading-relaxed">
+          ❌ <strong>Application Not Eligible:</strong> As per our lending criteria, a minimum net monthly salary of ₹20,000, 700+ CIBIL score, and Zero past bounces/overdues are required.
         </div>
 
         <!-- Submit Button -->
@@ -2345,14 +2368,56 @@
         ? getValue('otherCityField')
         : getValue('cityDropdown');
 
+      // Resolve Loan Amount — use custom input if "Other" was selected
+      const loanAmountSelect = document.getElementById('loanAmountInput');
+      const customLoanAmt = getValue('customLoanAmountInput');
+      const resolvedLoanAmount = loanAmountSelect && loanAmountSelect.value === 'Other'
+        ? (customLoanAmt ? '₹' + Number(customLoanAmt).toLocaleString('en-IN') : '')
+        : selectedText('loanAmountInput');
+
+      // Resolve Salary — use custom input if "Other" was selected
+      const salarySelect = document.getElementById('monthlySalaryInput');
+      const customSalaryVal = getValue('customSalaryInput');
+      const resolvedSalary = salarySelect && salarySelect.value === 'Other'
+        ? (customSalaryVal ? '₹' + Number(customSalaryVal).toLocaleString('en-IN') : '')
+        : selectedText('monthlySalaryInput');
+
+      // ── STRICT FRONTEND ELIGIBILITY FILTER ──────────────────────────
+      const rejectionAlert = document.getElementById('eligibilityRejectionAlert');
+      const cibilVal  = getValue('cibilScoreInput');
+      const bounceVal = getValue('bounceInput');
+
+      let isEligible = true;
+
+      // 1. CIBIL must be "Yes, CIBIL 700+"
+      if (cibilVal !== 'Yes, CIBIL 700+') isEligible = false;
+
+      // 2. Bounce must be "No Bounces & Zero Overdues"
+      if (bounceVal !== 'No Bounces & Zero Overdues') isEligible = false;
+
+      // 3. If salary "Other" and typed amount < ₹20,000 → block
+      if (salarySelect && salarySelect.value === 'Other') {
+        const typedSalary = parseFloat(customSalaryVal);
+        if (!customSalaryVal || isNaN(typedSalary) || typedSalary < 20000) isEligible = false;
+      }
+
+      if (!isEligible) {
+        rejectionAlert.classList.remove('hidden');
+        rejectionAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+
+      // All good — hide any previous rejection alert
+      rejectionAlert.classList.add('hidden');
+
       const payload = {
         timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         fullName: getValue('fullNameInput'),
         mobileNumber: getValue('mobileInput'),
         email: getValue('emailInput'),
-        requiredLoanAmount: selectedText('loanAmountInput'),
+        requiredLoanAmount: resolvedLoanAmount,
         loanPurpose: loanPurpose,
-        netMonthlySalary: selectedText('monthlySalaryInput'),
+        netMonthlySalary: resolvedSalary,
         employmentType: selectedText('employmentTypeInput'),
         cityOfResidence: city,
         cibilStatus: selectedText('cibilScoreInput'),
@@ -2394,8 +2459,8 @@
         return;
       }
 
-      if (!payload.fullName || !payload.email || !payload.requiredLoanAmount ||
-          !payload.loanPurpose || !payload.netMonthlySalary ||
+      if (!payload.fullName || !payload.email || !resolvedLoanAmount ||
+          !payload.loanPurpose || !resolvedSalary ||
           !payload.employmentType || !payload.cityOfResidence ||
           !payload.cibilStatus || !payload.chequeBounce) {
         alert('Please complete all required fields.');
@@ -2422,6 +2487,9 @@
         form.reset();
         document.getElementById('otherCityField').classList.add('hidden');
         document.getElementById('customPurposeWrapper').classList.add('hidden');
+        document.getElementById('customLoanAmountWrapper').classList.add('hidden');
+        document.getElementById('customSalaryWrapper').classList.add('hidden');
+        document.getElementById('eligibilityRejectionAlert').classList.add('hidden');
         onSubmitSuccess(payload);
 
       } catch (error) {
@@ -2505,6 +2573,38 @@
         ['privacyModal','termsModal','disclaimerModal'].forEach(function(id){ closeLegalModal(id); });
       }
     });
+
+    // ── Loan Amount "Other" Toggle ───────────────────────────────
+    function toggleCustomLoanAmount(select) {
+      const wrapper = document.getElementById('customLoanAmountWrapper');
+      const input   = document.getElementById('customLoanAmountInput');
+      if (select.value === 'Other') {
+        wrapper.classList.remove('hidden');
+        input.required = true;
+        input.focus();
+      } else {
+        wrapper.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+      }
+    }
+
+    // ── Net Monthly Salary "Other" Toggle ───────────────────────
+    function toggleCustomSalary(select) {
+      const wrapper = document.getElementById('customSalaryWrapper');
+      const input   = document.getElementById('customSalaryInput');
+      // Hide rejection alert on change so user can fix and resubmit
+      document.getElementById('eligibilityRejectionAlert').classList.add('hidden');
+      if (select.value === 'Other') {
+        wrapper.classList.remove('hidden');
+        input.required = true;
+        input.focus();
+      } else {
+        wrapper.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+      }
+    }
 
     // ── Loan Purpose "Other" Toggle ──────────────────────────────
     function toggleCustomPurpose(select) {
